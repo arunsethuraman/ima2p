@@ -12,7 +12,7 @@
 #include <iostream> 
 #include <string> 
 
-/* AS: uncomment this if compiling from source */
+/* AS: uncomment this if compiling from source without DMPI_ENABLED flag*/
 /* #ifndef MPI_ENABLED
  * #define MPI_ENABLED
  * #endif
@@ -20,6 +20,7 @@
 
 
 //AS: need config.h file for MPI definition
+//AS: Comment out this line if compiling from source
 #include <config.h>
 #ifdef MPI_ENABLED
 #include <mpi.h>
