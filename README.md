@@ -61,9 +61,10 @@ mpirun –np 5 IMa2p  -hn 2 <other IMa2 command line options>
 
 4.	Information in the Output files: Differences  from IMa2:
 a)	Main output file:   In addition to information on swapping rates between chains, the output file summarizes the swapping rate between processors. 
-b)	*.ti.0 file – if you have set genealogies to be saved into separate *.ti files, these will be created for each processor, but the sampled genealogies will be saved only on the head node. This file will be named *.ti.0.
+b)	*.ti file – if you have set genealogies to be saved into separate *.ti files, these will be created for each processor, but the sampled genealogies will be saved only on the head node. This file will be named *.ti.
 c)	*.mcf.<processor number> files – if you have set the MCMC states to be saved on each chain, this information is saved in files with the *.mcf extension. Each chain on each processor saves a different state file. All these files are important, if and when you wish to restart your ‘M’ or ‘L’ mode run in parallel.
 d)	*.burntrend.out.<processor number> file – burn-in trend files are created at the end of burn-in runs. These contain update rates for genealogies, which are unique to each processor (since there are coupled chains running on each processor). However, the burn-trend is collated onto the head node, and can be seen in the *.burntrend.out.0 file.
+e) If you wish to save lots of genealogies from multiple separate runs (M mode), and then run L mode computations on all these genealogies, you can do so by using the -r0 option, and specifying suffixes for all the saved ".ti" files using the -v option. Note that a separate L mode run will run in serial.
 
 5.	Please report any issues with compilation/running IMa2p to Arun Sethuraman (arun@temple.edu).
 
