@@ -12,7 +12,7 @@
 #include <iostream> 
 #include <string> 
 
-/* AS: uncomment this if compiling from source without DMPI_ENABLED flag*/
+/* AS: uncomment this if compiling from source */
 /* #ifndef MPI_ENABLED
  * #define MPI_ENABLED
  * #endif
@@ -20,8 +20,8 @@
 
 
 //AS: need config.h file for MPI definition
-//AS: Comment out this line if compiling from source
-#include <config.h>
+//AS: comment this out if compiling from source!!
+//#include "config.h"
 #ifdef MPI_ENABLED
 #include <mpi.h>
 #endif
@@ -1125,8 +1125,8 @@ gextern int swapcount_bwprocesses[MAXCHAINS][MAXCHAINS];
 gextern int swaps_bwprocesses[MAXCHAINS][MAXCHAINS];
 gextern int swaps_rec_bwprocesses[MAXCHAINS][MAXCHAINS];
 //AS: taking these out because the results are just too long for greater number of chains
-//gextern int tempbasedswapcount[MAXCHAINS][MAXCHAINS];
-//gextern int tempbased_rec_swapcount[MAXCHAINS][MAXCHAINS];
+gextern int tempbasedswapcount[MAXCHAINS][MAXCHAINS];
+gextern int tempbased_rec_swapcount[MAXCHAINS][MAXCHAINS];
 
 //gextern int numback, numforth, backcount, forthcount;
 

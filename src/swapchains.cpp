@@ -328,12 +328,12 @@ swapchains_bwprocesses(/*int *swapper, int *swappee, */int current_id, int step,
 					break;
 				}
 			}
-			/*
+			
 			if (p < q) {
 				tempbasedswapcount[q][p]++;
 			} else {
 				tempbasedswapcount[p][q]++;
-			}*/
+			}
 			//AS: only swapper keeps track of swap attempts and successes				
 
 
@@ -409,13 +409,13 @@ swapchains_bwprocesses(/*int *swapper, int *swappee, */int current_id, int step,
 					swaps_bwprocesses[procIdForB][procIdForA]++;
 				}
 				//AS: only swapper keeps track of swap
-				/*
+				
 				if (p < q) {
 					tempbasedswapcount[p][q]++;
 				} else {
 					tempbasedswapcount[q][p]++;
 				}
-				*/
+				
 				swapvar = 1;
 			} else {
 				swapvar = 0;
@@ -530,13 +530,13 @@ swapchains (int swaptries, int swapbetasonly, int currentid)
 			break;
 		}
 	}
-	/*
+	
 	if (p < q) {
 		tempbasedswapcount[q][p]++;
 	} else {
 		tempbasedswapcount[p][q]++;
 	}	
-	*/
+	
 
 
     if (ci < cj)
@@ -586,13 +586,13 @@ swapchains (int swaptries, int swapbetasonly, int currentid)
 //		swapcount_bwprocesses[currentid * numchains + cj][currentid * numchains + ci]++;
 	//}
       }
-	/*
+	
 	if (p < q) {
 		tempbasedswapcount[p][q]++;
 	} else {
 		tempbasedswapcount[q][p]++;
 	}
-	*/	
+	
 
 
       if (ci == 0 || cj == 0)
@@ -660,6 +660,22 @@ printchaininfo (FILE * outto, int heatmode, double hval1,
 				}
 			}
 		}
+		
+		for (int x = 0; x < numprocesses * numchains; x++) {
+			for (int y = 0; y < numprocesses * numchains; y++) {
+				try {
+					MPI::COMM_WORLD.Reduce(&tempbasedswapcount[x][y], &tempbased_rec_swapcount[x][y], 1,
+								MPI::INT, MPI::SUM, 0);
+				} catch (MPI::Exception e) {
+					std::cout << e.Get_error_string() << e.Get_error_code() << "\n";
+					MPI::COMM_WORLD.Abort(-1);
+				}
+			}
+		}
+
+
+
+
 		//AS: also have to send-receive all the swapcount variables into the swapcount_bwprocesses matrix
 		if (currentid == 0) {
 			for (int x = 0; x < numchains; x++) {
@@ -729,13 +745,20 @@ printchaininfo (FILE * outto, int heatmode, double hval1,
       //  fprintf (outto, " %3d  %7.4f %5ld  \n", i, allbetas[i],
         //         swapcount_bwprocesses[i][i + 1]);
     }
-    fprintf (outto, " %3d  na      na\n", i);
+    /*fprintf (outto, " %3d  na      na\n", i);
     fprintf (outto, "\n");
-	}
+    fprintf(outto, "Temperature #Swaps Rate \n");
+    for (i = 0; i < numprocesses * numchains -1; i++) 
+    {
+	fprintf (outto, " %3d  %5ld  %7.4f\n", allbetas[i],
+	tempbasedswapcount[i][i+1],
+	tempbasedswapcount[i][i+1] / (float) tempbasedswapcount[i+1][i]);
+    }
+    }*/
   }
   if (numprocesses > 1 && currentid == 0) {
 	//AS: this has to be allreduced before printing
-	fprintf (outto, "\nCHAIN SWAPPING BETWEEN PROCESSES:\n");
+	fprintf (outto, "\nCHAIN SWAPPING BETWEEN PROCESSORS:\n");
 	fprintf (outto,
 		"------------------------------------------------\n");
 	
@@ -760,11 +783,11 @@ printchaininfo (FILE * outto, int heatmode, double hval1,
 				
 				
 			
-	/*
+	
 	fprintf (outto, "\nCHAIN SWAPPING BETWEEN TEMPERATURES:\n");
 	fprintf (outto,
 		"------------------------------------------------\n");
-	fprintf (outto, "Temperature1  Temperature2  SwapRate  SwapAttempts\n");
+	/*fprintf (outto, "Temperature1  Temperature2  SwapRate  SwapAttempts\n");
 	for (i = 0; i < numprocesses * numchains; i++) {
 		for (int j = 0; j < numprocesses * numchains; j++) {
 			if (i > j && tempbased_rec_swapcount[i][j] > 0) {
@@ -776,18 +799,26 @@ printchaininfo (FILE * outto, int heatmode, double hval1,
 			}
 		}
 	}*/
-/*
-	fprintf (outto, "\n\n");
-	fprintf (outto, "Temperature1  Temperature2  #Swaps\n");
+
+	//fprintf (outto, "\n\n");
+	fprintf (outto, "Temp1     Temp2    #Swaps    #Attempts   Rate\n");
 	for (i = 0; i < numprocesses * numchains; i++) {
 		for (int j = 0; j < numprocesses * numchains; j++) {
-			if (i < j) {
-				fprintf (outto, " %7.4f    %7.4f   %5ld\n", allbetas[i], allbetas[j], tempbased_rec_swapcount[i][j]);
+			if (i < j && tempbased_rec_swapcount[j][i] > 0) {
+				fprintf (outto, " %7.4f    %7.4f   %5ld   %5ld   %7.4f\n", allbetas[i], allbetas[j], tempbased_rec_swapcount[i][j], tempbased_rec_swapcount[j][i], (float) tempbased_rec_swapcount[i][j]/ (float) tempbased_rec_swapcount[j][i]);
 			}
-		}
-	}*/
-//	fprintf (outto, "\n\n");
+			else if (i < j && tempbased_rec_swapcount[j][i] == 0) {
+				fprintf (outto, " %7.4f    %7.4f   %5ld   %5ld   na\n", allbetas[i], allbetas[j], tempbased_rec_swapcount[i][j], tempbased_rec_swapcount[j][i]);
+			}
+				//if (tempbased_rec_swapcount[i][j] > 0) {
+				//		fprintf (outto, "    %7.4f\n", (float)(tempbased_rec_swapcount[j][i]/tempbased_rec_swapcount[i][j]));
+				//} else if (tempbased_rec_swapcount[i][j] == 0) {
+				//	fprintf (outto, "    na\n");
+				//}
+			}
 	}
-
+	fprintf (outto, "\n\n");
+	}
+	}
 
 }                               /* printchaininfo */

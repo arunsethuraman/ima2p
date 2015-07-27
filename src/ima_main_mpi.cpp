@@ -1701,7 +1701,7 @@ void start (int argc, char *argv[], int currentid)
   //  strcpy (oldoutfilename, outfilename);
   //  strcat (oldoutfilename, ".old");
   //  strcat (oldoutfilename, currentid);
-      sprintf(oldoutfilename, "%s.old", outfilename, currentid);
+      sprintf(oldoutfilename, "%s.old.%d", outfilename, currentid);
   }
   for (i = 0; i < MAXLOCI; i++)
     hilocuslike[i] = -1e20;
