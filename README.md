@@ -59,6 +59,8 @@ An IMa2p run must invoke at least 1 MCMC chain per run.  In IMa2 the –hn flag 
 
 mpirun –np 5 IMa2p  -hn 2 <other IMa2 command line options> 
 
+For instructions on compilation on a multi-core Windows PC using a Linux Emulator (eg. Cygwin), please refer to the user manual.
+
 4.	Information in the Output files: Differences  from IMa2:
 a)	Main output file:   In addition to information on swapping rates between chains, the output file summarizes the swapping rate between processors. 
 b)	*.ti file – if you have set genealogies to be saved into separate *.ti files, these will be created for each processor, but the sampled genealogies will be saved only on the head node. This file will be named *.ti.
