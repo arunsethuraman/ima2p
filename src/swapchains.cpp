@@ -784,7 +784,7 @@ printchaininfo (FILE * outto, int heatmode, double hval1,
 				
 			
 	
-	fprintf (outto, "\nCHAIN SWAPPING BETWEEN TEMPERATURES:\n");
+	fprintf (outto, "\nCHAIN SWAPPING BETWEEN ADJACENT TEMPERATURES:\n");
 	fprintf (outto,
 		"------------------------------------------------\n");
 	/*fprintf (outto, "Temperature1  Temperature2  SwapRate  SwapAttempts\n");
@@ -802,20 +802,20 @@ printchaininfo (FILE * outto, int heatmode, double hval1,
 
 	//fprintf (outto, "\n\n");
 	fprintf (outto, "Temp1     Temp2    #Swaps    #Attempts   Rate\n");
-	for (i = 0; i < numprocesses * numchains; i++) {
-		for (int j = 0; j < numprocesses * numchains; j++) {
-			if (i < j && tempbased_rec_swapcount[j][i] > 0) {
-				fprintf (outto, " %7.4f    %7.4f   %5ld   %5ld   %7.4f\n", allbetas[i], allbetas[j], tempbased_rec_swapcount[i][j], tempbased_rec_swapcount[j][i], (float) tempbased_rec_swapcount[i][j]/ (float) tempbased_rec_swapcount[j][i]);
+	for (i = 0; i < numprocesses * numchains - 1; i++) {
+	//	for (int j = 0; j < numprocesses * numchains; j++) {
+			if (/*i < j && */tempbased_rec_swapcount[i+1][i] > 0) {
+				fprintf (outto, " %7.4f    %7.4f   %5ld   %5ld   %7.4f\n", allbetas[i], allbetas[i+1], tempbased_rec_swapcount[i][i+1], tempbased_rec_swapcount[i+1][i], (float) tempbased_rec_swapcount[i][i+1]/ (float) tempbased_rec_swapcount[i+1][i]);
 			}
-			else if (i < j && tempbased_rec_swapcount[j][i] == 0) {
-				fprintf (outto, " %7.4f    %7.4f   %5ld   %5ld   na\n", allbetas[i], allbetas[j], tempbased_rec_swapcount[i][j], tempbased_rec_swapcount[j][i]);
+			else if (/*i < j &&*/ tempbased_rec_swapcount[i+1][i] == 0) {
+				fprintf (outto, " %7.4f    %7.4f   %5ld   %5ld   na\n", allbetas[i], allbetas[i+1], tempbased_rec_swapcount[i][i+1], tempbased_rec_swapcount[i+1][i]);
 			}
 				//if (tempbased_rec_swapcount[i][j] > 0) {
 				//		fprintf (outto, "    %7.4f\n", (float)(tempbased_rec_swapcount[j][i]/tempbased_rec_swapcount[i][j]));
 				//} else if (tempbased_rec_swapcount[i][j] == 0) {
 				//	fprintf (outto, "    na\n");
 				//}
-			}
+	//		}
 	}
 	fprintf (outto, "\n\n");
 	}
