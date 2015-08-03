@@ -2,9 +2,27 @@
 IMa2p is a parallel implementation of IMa2, using OpenMPI-C++ - a Bayesian MCMC based method for inferring population demography under the IM (Isolation with Migration) model.
 Please refer to Sethuraman and Hey (2015) for details of implementation.
 
-Please cite:
+Citation:
 Sethuraman, A, J Hey. 2015. IMa2p - Parallel MCMC and inference of ancient demography under the Isolation with Migration (IM) model. Molecular Ecology Resources
 DOI: 10.1111/1755-0998.12437
+
+
+Important - Bug fixes - 8/3/2015
+
+Users that downloaded IMa2p before 7/20/2015, please note that there have been a couple of minor bug fixes since.
+
+1) TI files - all genealogies sampled by IMa2p will be printed to a file with a .ti extension. The buggy version was printing files suffixed with .ti.0 instead, which in turn was leading to errors while calling the L mode.
+This is a simple fix - you will have to rename the file to have a .ti extension instead, and then rerun IMa2p L mode.
+To do this in Unix, type:
+
+mv <yourfile>.ti.0 <yourfile>.ti
+
+Thereon, you should be able to call IMa2p's L mode as before. Note that this has now been fixed in the new version, and the program will directly print .ti files instead.
+
+2) I have now added the functionality to print swap rates between adjacent temperatures - note that in parallelized MC3, while chains remain stationary across processors, their temperatures move around throughout the run.
+Hence swapping rates between adjancent temperatures of chains should give a better idea of mixing than swap rates between adjacent chains. 
+
+Please report any bugs/crashes to arun@temple.edu
 
 Compiling and Running IMa2p
 By Arun Sethuraman and Jody Hey
