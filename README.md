@@ -15,7 +15,7 @@ Users that downloaded IMa2p before 7/20/2015, please note that there have been a
 This is a simple fix - you will have to rename the file to have a .ti extension instead, and then rerun IMa2p L mode.
 To do this in Unix, type:
 
-mv <yourfile>.ti.0 <yourfile>.ti
+mv yourfile.ti.0 yourfile.ti
 
 Thereon, you should be able to call IMa2p's L mode as before. Note that this has now been fixed in the new version, and the program will directly print .ti files instead.
 
@@ -25,7 +25,9 @@ Hence swapping rates between adjancent temperatures of chains should give a bett
 Please report any bugs/crashes to arun@temple.edu
 
 Compiling and Running IMa2p
+
 By Arun Sethuraman and Jody Hey
+
 Center for Computational Genetics and Genomics, Temple University
 
 1.	Introduction
