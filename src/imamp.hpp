@@ -114,7 +114,7 @@ is not microsoft, then this file is not included, and the regular direct is used
 
 
 /* CONSTANTS */
-#define MAXLOCI  600            //100
+#define MAXLOCI  1000            //1000
 #define MAXCHAINS 1000          //201
 #define MAXGENES 1000           // maximum sample size for a locus  
 #define MAXLENGENENAME 12       /* a gene name can be up to 10, plus 11-th can be @ for diploid */
