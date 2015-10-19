@@ -1762,8 +1762,9 @@ void start (int argc, char *argv[], int currentid)
   // AS: TODO runoptions has to be broadcast - done
   if (runoptions[LOADMCSTATE])
   {
-	
-    sprintf(mcfreadfilename, "%s.mcf.%d", outfilename, currentid);  
+	//AS: previously, this was erroneously being written as outputfilename.mcf.currentid. This is wrong
+	//Brought to my attention by Louis Plough on Mon Oct 19 12:18:15 EDT 2015
+    sprintf(mcfreadfilename, "%s.mcf.%d", mcfreadfilename, currentid);  
     readmcf (mcfreadfilename);
   }
 }                               /* start */
