@@ -21,7 +21,7 @@
 
 //AS: need config.h file for MPI definition
 //AS: comment this out if compiling from source!!
-//#include "config.h"
+#include "config.h"
 #ifdef MPI_ENABLED
 #include <mpi.h>
 #endif
