@@ -6,6 +6,15 @@ Citation:
 Sethuraman, A, J Hey. 2015. IMa2p - Parallel MCMC and inference of ancient demography under the Isolation with Migration (IM) model. Molecular Ecology Resources
 DOI: 10.1111/1755-0998.12437
 
+Important - Bug fix - 10/19/2015
+
+Fixed a bug in reading MCF files back into memory for re-starting M mode. Previously, the code was wrongly reading the MCF file prefixed as:
+"newoutputfilename.mcf.processorid", whereas it should have been "oldoutputfilename.mcf.processorid". I have now fixed this. You should be able to specify the file name in command line as:
+
+mpirun -np ... -r3 -f oldoutputfilename.out
+
+Thanks to Louis Plough for bringing this to my attention!
+
 
 Important - Bug fixes - 8/3/2015
 
