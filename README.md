@@ -51,16 +51,16 @@ chmod +x *
 
 Then, type:
 
-./configure –with-mpi=yes –prefix=/path/to/install
+./configure --with-mpi=yes –-prefix=/path/to/install
 
 This should create the necessary ‘make’ files to install the package. 
 If you aren’t sure, the configuration script will determine if your machine contains OpenMPI definitions or not, and create ‘make’ files accordingly. To do this:
 
-./configure –with-mpi=auto –prefix=/path/to/install
+./configure –-with-mpi=auto –-prefix=/path/to/install
 
 Alternately, IMa2p can also be compiled using a generic GNU C++ compiler for serial use (similar to the original IMa2 package). To do this, type:
 
-./configure –with-mpi=no –prefix=/path/to/install
+./configure –-with-mpi=no –-prefix=/path/to/install
 
 Note however, that if your machine does not have OpenMPI installed, or if the configuration script is unable to find it, it will compile a serial version of the program (similar to IMa2) with a regular GNU C++ compiler.
 Once the ‘make’ files have been generated successfully, you should be able to install IMa2p by typing:
@@ -77,7 +77,7 @@ This should create a bin folder inside your installation path, which will contai
 If you wish to compile from source, then you need to either delete or comment out line #24 from src/imamp.hpp (which says #include <config.h>).
 Thereon, to compile from source, cd into the src folder, and type:
 
-mpicxx –DMPI_ENABLED –o IMa2p *.cpp
+mpicxx -DMPI_ENABLED –o IMa2p *.cpp
 
 This will create an executable called IMa2p in the src folder. To run the program in serial mode (single processor), run the executable directly with an appropriate command line (for details see the manual for IMa2).
 To run it in parallel use mpirun or mpiexec, for example:
