@@ -1950,7 +1950,7 @@ void qupdate (int curr_id,/* int *swapper, int *swappee, std::ofstream &f1, */in
 	//AS: But in parallel, we can only swap heats, not pointers
 	
   	swapbetasonly = 1;
-    	qswapped = swapchains (swaptries, swapbetasonly, curr_id);
+    	qswapped = swapchains (swaptries, swapbetasonly, curr_id, heatmode);
 	//f1 << "Step = " << step << "\n";
   }
 	/* If we have more than 1 process, we are by default swapping only beta values
@@ -1961,7 +1961,7 @@ void qupdate (int curr_id,/* int *swapper, int *swappee, std::ofstream &f1, */in
 	{
 		//std::cout << "Attempting swap...\n";
 		qswapped = swapchains_bwprocesses(/*swapper, swappee,*/curr_id, step, swaptries, swapbetasonly,
-					chainduration, burnduration,/* f1,*/ swapA, swapB);
+					chainduration, burnduration,/* f1, swapA, swapB*/ heatmode);
 		if (swapflag == 0) {
 			swapflag = 1;
 		} else if (swapflag == 1) {
@@ -3992,6 +3992,8 @@ int main (int argc, char *argv[])
 		MPI::COMM_WORLD.Abort(-1);
 		return 0;
 	}
+  #else
+  numprocesses = 1;
   #endif
 //AS: Debug only
 //	if (currentid == 0) { 

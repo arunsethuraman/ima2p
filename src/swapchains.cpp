@@ -74,6 +74,7 @@ setheat (double hval1, double hval2, int heatmode, int currentid)
   int ci;
   int x = 0;
   double h = 0.0;
+  int hchains = numprocesses * numchains; //AS: Mon Apr 25 10:44:36 EDT 2016
    /* 5/19/2011 JH adding thermodynamic integration */
 //AS: Changing how i maintain count of swaps as on 6/13/2014
 //allbetas is an array that's saved on each processor
@@ -81,8 +82,15 @@ setheat (double hval1, double hval2, int heatmode, int currentid)
 //to the corresponding temperature, instead of the chain id.
 //	if (currentid == 0) {
 		allbetas = static_cast<double *> (malloc ((numchains * numprocesses) * sizeof (double)));
+		//AS:Mon Apr 25 10:45:46 EDT 2016
+		if (numprocesses == 1 && numchains == 1) {
+			allbetas[0] = 1.0;
+			beta[0] = 1.0;
+			return;
+		}
 		///FILL up all betas - this would be faster than actually having to send it from other processes, I think
 		for (int i = 0; i < numprocesses * numchains; i++) {
+
 				switch (heatmode)
 				{
 				case HLINEAR:
@@ -97,18 +105,12 @@ setheat (double hval1, double hval2, int heatmode, int currentid)
 					break;
 				case HEVEN:
 					h = 1.0 / (numchains - 1);
-					if (i == 0) {
-						allbetas[x] = 1.0;
-					} else {
-						if (i == numchains * numprocesses - 1) {
-							allbetas[x] = 0.0;
-						} else {
-							allbetas[x] = 1.0 - i * h;
-						}
-						x++;
-						break;
-					}
+					allbetas[x] = 1.0 - i * h;
+					x++;
+					break;
 				}
+				if (i == hchains)
+					break;
 		}
 					
 //	}
@@ -116,12 +118,15 @@ setheat (double hval1, double hval2, int heatmode, int currentid)
   
 /*  9/26/2011 thermodynamic integration handled by simpson's rule which requires an even number of intervals 
     this means we need numchains to be odd, so if   numchains is even,  we reduce it by 1  */
-  if (heatmode == HEVEN  && ODD(numchains) == 0 && numprocesses == 1)
-    numchains -= 1; 
+//  if (heatmode == HEVEN  && ODD(numchains) == 0 && numprocesses == 1)
+//    numchains -= 1; 
 
   int i = 0;
   for (ci = currentid * numchains; ci < currentid * numchains + numchains; ci++)
   {
+	//AS: Mon Apr 25 10:48:33 EDT 2016
+	if (ci == hchains)
+		break;
     switch (heatmode)
     {
     case HLINEAR:
@@ -153,27 +158,7 @@ setheat (double hval1, double hval2, int heatmode, int currentid)
     /* 5/19/2011 JH adding thermodynamic integration */
     case HEVEN:
       h = 1.0 / (numprocesses * numchains-1);
-      if (ci== 0) {
-        beta[i] = 1.0;
-	betaref1[i] = beta[i];
-	betaref2[i] = beta[i];
-
-	//std::cout << "Temperature of chain " << ci << " is " << beta[i] << "\n";
-	}
-      else
-      {
-        if (ci== (numprocesses * numchains-1)) {
-          beta[i] = 0.0;
-	betaref1[i] = beta[i];
-	betaref2[i] = beta[i];
-
-       } else {
-          beta[i] = 1.0 - ci*h;
-		betaref1[i] = beta[i];
-		betaref2[i] = beta[i];
-	}
-
-    }
+      beta[i] = 1.0 - ci*h;
       break;
     }
      /* 5/19/2011 JH adding thermodynamic integration */
@@ -206,12 +191,12 @@ will think that parameters have changed.  This should not matter */
 
 int
 swapchains_bwprocesses(/*int *swapper, int *swappee, */int current_id, int step, int swaptries, int swapbetasonly, int chainduration,
-			int burnduration,/* std::ofstream &f1,*/ int swapA, int swapB)
+			int burnduration/* std::ofstream &f1,int swapA, int swapB*/,int heatmode)
 {
 	int swapvar = 0;
 	#ifdef MPI_ENABLED	
 	
-	MPI::Status status;
+	//MPI::Status status;
 	MPI::Request request[2];
 	double metropolishastingsterm;
 	int whichElementA, whichElementB;
@@ -225,43 +210,104 @@ swapchains_bwprocesses(/*int *swapper, int *swappee, */int current_id, int step,
 	double bbeta = 0.0;
 	int p = 0;
 	int q = 0;
-	whichElementA = 0;
-	whichElementB = 0;
+	//AS: Mon Apr 25 10:51:12 EDT 2016
+	int l = 0;
+	int sa = 0;
+	int sb = 0;
+	int x = 0;
+	int y = 0;
+	int sbmin, sbrange;
+	#define SWAPDIST 7
+	for (x = 0; x < swaptries; x++) {
+		swapvar = 0;
+		if (current_id == 0) {
+			sa = (int) (uniform() * numprocesses * numchains);
+			if (numchains * numprocesses < 2 * SWAPDIST + 3)
+			{
+				sbmin = 0;
+				sbrange = numprocesses * numchains;
+			} else {
+				sbmin = IMAX(0, sa - SWAPDIST);
+				sbrange = IMIN(numchains * numprocesses, sa + SWAPDIST) - sbmin;
+			}
+			do {
+				sb = sbmin + (int) (uniform() * sbrange);
+			} while (sb == sa);
+			for (y = 1; y < numprocesses; y++) {
+				MPI::COMM_WORLD.Send(&sa, 1, MPI::INT, y, 1234*y);
+				MPI::COMM_WORLD.Send(&sb, 1, MPI::INT, y, 3456*y);
+			}
+		}
+		if (current_id != 0) {
+			MPI::COMM_WORLD.Recv(&sa, 1, MPI::INT, 0,  1234*current_id);
+			MPI::COMM_WORLD.Recv(&sb, 1, MPI::INT, 0,  3456*current_id);
+		}
+		abeta = allbetas[sa];
+		bbeta = allbetas[sb];
+		whichElementA = 0;
+		whichElementB = 0;
+		doISwap = 0;
+		areWeA = 0;
+		
 		/* OLD CODE: AS - changing this to pick the chains to swap instead of the processes */
 		/* as on 7/1/2014 
 		procIdForA = swapA;
 		procIdForB = swapB;
 		*/
-		procIdForA = floor (swapA/numchains);
-		procIdForB = floor (swapB/numchains);
+		procIdForA = -1;
+		procIdForB = -1;
+
+		for (y = 0; y < numchains; y++) {
+			if (beta[y] == abeta) {
+				procIdForA = current_id;
+				doISwap = 1;
+				areWeA = 1;
+				whichElementA = y;
+				if (current_id != 0) {
+					MPI::COMM_WORLD.Send(&procIdForA, 1, MPI::INT, 0, 12345);
+				}
+				break;
+			}
+		}
+		for (y = 0; y < numchains; y++) {
+			if (beta[y] == bbeta) {
+				procIdForB = current_id;
+				whichElementB = y;
+				doISwap = 1;
+				if (current_id != 0) {
+					MPI::COMM_WORLD.Send(&procIdForB, 1, MPI::INT, 0, 34567);
+				}
+				break;
+			}
+		}
+		if (current_id == 0 && procIdForA == -1) {
+			MPI::COMM_WORLD.Recv(&procIdForA, 1, MPI::INT, MPI_ANY_SOURCE, 12345);
+		}
+		if (current_id == 0 && procIdForB == -1) {
+			MPI::COMM_WORLD.Recv(&procIdForB, 1, MPI::INT, MPI_ANY_SOURCE, 34567);
+		}
+		if (current_id == 0) {
+			for (y = 1; y < numprocesses; y++) {
+				MPI::COMM_WORLD.Send(&procIdForA, 1, MPI::INT, y, 1234*y);
+			}
+			for (y = 1; y < numprocesses; y++) {
+				MPI::COMM_WORLD.Send(&procIdForB, 1, MPI::INT, y, 3456*y);
+			}
+		}
+		if (current_id != 0) {
+			MPI::COMM_WORLD.Recv(&procIdForA, 1, MPI::INT, 0, 1234*current_id);
+			MPI::COMM_WORLD.Recv(&procIdForB, 1, MPI::INT, 0, 3456*current_id);
+		}
 			
-		whichElementA = swapA - procIdForA * numchains;
-		whichElementB = swapB - procIdForB * numchains;
-		
-/*	do {
-		whichElementA = (int) (uniform () * numchains);
-	} while (whichElementA < 0 || whichElementA >= numchains);
-	
-	do {
-		whichElementB = (int) (uniform () * numchains);
-	} while (whichElementB < 0 || whichElementB >= numchains);
-*/
-	
+
 	//f1 << "ProcID for A is " << procIdForA << " and ProcID for B is " << procIdForB << "\n";
-	doISwap = areWeA = 0;
-	if (current_id == procIdForA) {
-		doISwap = 1;
-		areWeA = 1;
-	} else if (current_id == procIdForB) {
-		doISwap = 1;
-	}
 	if (doISwap == 1) {
 	
-	if (procIdForA == procIdForB) {
+	if (procIdForA == procIdForB && procIdForA == current_id) {
 	//	f1 << "Pushing this to within process swap...\n Run done? " << rundone;
-		swapchains(swaptries, swapbetasonly, current_id);
+		swapchains(1, swapbetasonly, current_id, heatmode);
 		return swapvar;
-	} else {
+	} else if (procIdForA != procIdForB) {
 	//	f1 << "Swapper and swappee are not the same so I am going to attempt swap\n";
 		if (areWeA == 1) {
 			if (procIdForA < procIdForB) {
@@ -470,6 +516,7 @@ swapchains_bwprocesses(/*int *swapper, int *swappee, */int current_id, int step,
 		}
 	}
 	}
+	} //AS: closes swaptries
 	#endif
 	return swapvar;	
 
@@ -477,7 +524,7 @@ swapchains_bwprocesses(/*int *swapper, int *swappee, */int current_id, int step,
 
 
 int
-swapchains (int swaptries, int swapbetasonly, int currentid)
+swapchains (int swaptries, int swapbetasonly, int currentid, int heatmode)
 {
   int ci, cj, i, swap0ok;
   double metropolishastingsterm;
@@ -598,6 +645,9 @@ swapchains (int swaptries, int swapbetasonly, int currentid)
       if (ci == 0 || cj == 0)
         swap0ok |= 1;
       }
+	//AS: Mon Apr 25 11:13:38 EDT 2016
+	if (numprocesses > 1)
+		break;
  }
   return swap0ok;
 }                               /* swapchains */
@@ -619,7 +669,7 @@ printchaininfo (FILE * outto, int heatmode, double hval1,
 {
   int i;
   if (currentid == 0) {
-  fprintf (outto, "\nCHAIN SWAPPING BETWEEN SUCCESSIVE CHAINS: ");
+  fprintf (outto, "\nCHAIN SWAPPING:");
   switch (heatmode)
 
   {
@@ -710,7 +760,29 @@ printchaininfo (FILE * outto, int heatmode, double hval1,
 
   {
     if (currentid == 0) {
-    fprintf (outto, "beta terms :");
+	fprintf (outto, "Temp1     Temp2    #Swaps    #Attempts   Rate\n");
+	for (i = 0; i < numprocesses * numchains - 1; i++) {
+		if (numprocesses > 1) {
+			if (tempbased_rec_swapcount[i+1][i] > 0) {
+				fprintf(outto, " %7.4f     %7.4f    %5ld    %5ld    %7.4f\n", allbetas[i], allbetas[i+1], tempbased_rec_swapcount[i][i+1], tempbased_rec_swapcount[i+1][i], (float) tempbased_rec_swapcount[i][i+1]/(float) tempbased_rec_swapcount[i+1][i]);
+			} else if (tempbased_rec_swapcount[i+1][i] == 0) {
+				fprintf(outto, "%7.4f    %7.4f    %5ld    %5ld    na\n", allbetas[i], allbetas[i+1], tempbased_rec_swapcount[i][i+1], tempbased_rec_swapcount[i+1][i]);
+			}
+		} else if (numprocesses == 1) {
+			if (tempbasedswapcount[i+1][i] > 0) {
+				fprintf(outto, "%7.4f    %7.4f    %5ld    %5ld    %7.4f\n", allbetas[i], allbetas[i+1], tempbasedswapcount[i][i+1], tempbasedswapcount[i+1][i], (float)tempbasedswapcount[i][i+1]/(float)tempbasedswapcount[i+1][i]);
+			} else if (tempbasedswapcount[i+1][i] > 0) {
+				fprintf(outto, "%7.4f    %7.4f    %5ld    %5ld    na\n", allbetas[i], allbetas[i+1], tempbasedswapcount[i][i+1], tempbasedswapcount[i+1][i]);
+			}
+		}
+	}
+	fprintf(outto, "\n\n");
+
+   }
+			
+
+//AS: commenting this out to print temp based swaps instead
+/*    fprintf (outto, "beta terms :");
     for (i = 0; i < numprocesses * numchains; i++)
 	//AS: this has to change...!!
       fprintf (outto, "|%2d %5.3f", i, allbetas[i]);
@@ -726,12 +798,30 @@ printchaininfo (FILE * outto, int heatmode, double hval1,
     for (i = 0; i < numprocesses * numchains - 1; i++)
       fprintf (outto, "|%2d %5ld", i, swapcount_bwprocesses[i][i + 1]);
     fprintf (outto, "\n\n");
-	}
-	}
+	}*/
   }
   else
   {
-	if (numprocesses > 1 && currentid == 0) {
+	if (numprocesses == 1 && currentid == 0) {
+		fprintf(outto, "Chain    #Swaps    Rate\n");
+		for (i = 0; i < numchains - 1; i++) {
+			if(swapcount[i+1][i])
+				fprintf(outto, " %3d    %5ld    %7.4lf\n", i, swapcount[i][i+1], swapcount[i][i+1]/(float)swapcount[i+1][i]);
+			else
+				fprintf(outto, " %3d    %5ld    na\n", i, swapcount[i][i+1]);
+		}
+		fprintf(outto, "\n");
+		fprintf(outto, "Temp1    Temp2    #Swaps    #Attempts    Rate\n");
+		for (i = 0; i < numchains - 1; i++) {
+			if (tempbasedswapcount[i+1][i] > 0) {
+				fprintf(outto, " %7.4f    %7.4f    %5ld    %5ld    %7.4lf\n", allbetas[i], allbetas[i+1], tempbasedswapcount[i][i+1], tempbasedswapcount[i+1][i], (float) tempbasedswapcount[i][i+1]/(float) tempbasedswapcount[i+1][i]);
+			} else if (tempbasedswapcount[i+1][i] == 0) {
+				fprintf(outto, " %7.4f    %7.4f    %5ld    %5ld    na\n", allbetas[i], allbetas[i+1], tempbasedswapcount[i][i+1], tempbasedswapcount[i+1][i]);
+			}
+		}
+	}
+		
+    else if (numprocesses > 1 && currentid == 0) {
     fprintf (outto, "Chain   #Swaps  Rate \n");
     for (i = 0; i < numprocesses * numchains - 1; i++)
 

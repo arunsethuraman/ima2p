@@ -1269,12 +1269,12 @@ void print_greater_than_tests (FILE * outfile);
 void setheat (double hval1, double hval2, int heatmode, int currentid);
 
 /* CR 110929.4 get rid of extraneous args in declaration  */
-int swapchains (int swaptries, int swapbetasonly, int currentid);
+int swapchains (int swaptries, int swapbetasonly, int currentid, int heatmode);
 /* AS - adding this function for swapping heats only */
 void swapbetas (int ci, int cj);
 /* AS - adding a function to swap heats between processes */
 //#ifdef MPI_ENABLED
-int swapchains_bwprocesses (/*int *swapper, int *swappee, */int current_id, int step, int swaptries, int swapbetasonly,int chainduration, int burnduration,/* std::ofstream &f1,*/ int swapA, int swapB);
+int swapchains_bwprocesses (/*int *swapper, int *swappee, */int current_id, int step, int swaptries, int swapbetasonly,int chainduration, int burnduration,/* std::ofstream &f1, int swapA, int swapB*/, int heatmode);
 //#endif
 void printchaininfo (FILE * outto, int heatmode, 
                      double hval1, double hval2, int currentid);

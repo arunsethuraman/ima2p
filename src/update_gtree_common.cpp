@@ -1772,7 +1772,7 @@ G->gweight must have been previously initialized to zero by a call to setzero_ge
       {
         nowpop = C[ci]->poptree[nowpop].down;
       }
-      assert (ISELEMENT (nowpop, C[0]->periodset[sgp->periodi]));
+      assert (ISELEMENT (nowpop, C[ci]->periodset[sgp->periodi]));//AS: Mon Apr 25 12:16:23 EDT 2016
       sgp->pop = nowpop;
       sgp->topop = gtree[i].mig[j].mp;
       assert (nowpop != sgp->topop);
