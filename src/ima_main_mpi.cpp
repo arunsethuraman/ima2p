@@ -3532,8 +3532,8 @@ int *z_rec = static_cast<int *> (malloc (numsplittimes * sizeof (int)));
         }
         if (currentid == 0) {
         for (int x = 0; x < numsplittimes; x++) {
-                T[x].upinf[IM_UPDATE_TIME_RY1].tries = y_rec[x];
-                T[x].upinf[IM_UPDATE_TIME_RY1].accp = z_rec[x];
+                T[x].upinf[IM_UPDATE_TIME_NW].tries = y_rec[x];
+                T[x].upinf[IM_UPDATE_TIME_NW].accp = z_rec[x];
         }
         }
 
