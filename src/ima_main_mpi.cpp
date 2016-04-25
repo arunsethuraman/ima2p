@@ -121,7 +121,7 @@ static void callasciitrend (FILE * outfile);
 static void printoutput (int currentid);
 static void intervaloutput (FILE * outto, int currentid);
 static void free_ima_main_stuff ();
-static void callprintacceptancerates (FILE * outto);
+static void callprintacceptancerates (FILE * outto, int currentid);
 static void printsteps (FILE * outto, double like);
 static void check_to_record (int current_id); ///AS: Adding current_id
 static void record_migration_names();
@@ -3460,12 +3460,90 @@ void printsteps (FILE * outto, double like)
 	call printacceptancerates ()
 	*/
 
-void callprintacceptancerates (FILE * outto)
+void callprintacceptancerates (FILE * outto, int currentid)
 {
   int i, j, li;
   // length of this array must be fairly long, although it is technically possible to have MAXLOCI * MAXLINKED records,  but very unlikely
   struct chainstate_record_updates_and_values *reclist[MAXLOCI + MAXLINKED];
+  struct chainstate_record_updates_and_values *reclist_saved[MAXLOCI + MAXLINKED];
+
 // t values 
+  for (i = 0; i < numsplittimes; i++)
+    reclist_saved[i] = (T + i);
+#ifdef DO_RY1UPDATE
+#ifdef MPI_ENABLED
+if (numprocesses > 1) {
+int *y = static_cast<int *> (malloc (numsplittimes * sizeof (int)));
+int *y_rec = static_cast<int *> (malloc (numsplittimes * sizeof (int)));
+int *z = static_cast<int *> (malloc (numsplittimes * sizeof (int)));
+int *z_rec = static_cast<int *> (malloc (numsplittimes * sizeof (int)));
+ for (int x = 0; x < numsplittimes; x++) {
+        y[x] = T[x].upinf[IM_UPDATE_TIME_RY1].tries;
+        z[x] = T[x].upinf[IM_UPDATE_TIME_RY1].accp;
+ }
+        try {
+                MPI::COMM_WORLD.Reduce(y, y_rec, numsplittimes, MPI::INT, MPI::SUM, 0);
+        } catch (MPI::Exception e) {
+                std::cout << e.Get_error_string() << e.Get_error_code() << "\n";
+                MPI::COMM_WORLD.Abort(-1);
+        }
+        try {
+                MPI::COMM_WORLD.Reduce(z, z_rec, numsplittimes, MPI::INT, MPI::SUM, 0);
+        } catch (MPI::Exception e) {
+                std::cout << e.Get_error_string() << e.Get_error_code() << "\n";
+                MPI::COMM_WORLD.Abort(-1);
+        }
+        if (currentid == 0) {
+        for (int x = 0; x < numsplittimes; x++) {
+                T[x].upinf[IM_UPDATE_TIME_RY1].tries = y_rec[x];
+                T[x].upinf[IM_UPDATE_TIME_RY1].accp = z_rec[x];
+	}
+	}
+  XFREE(y);
+  XFREE(y_rec);
+  XFREE(z);
+  XFREE(z_rec);
+}
+#endif
+#endif
+
+#ifdef DO_NWUPDATE
+#ifdef MPI_ENABLED
+if (numprocesses > 1) {
+int *y = static_cast<int *> (malloc (numsplittimes * sizeof (int)));
+int *y_rec = static_cast<int *> (malloc (numsplittimes * sizeof (int)));
+int *z = static_cast<int *> (malloc (numsplittimes * sizeof (int)));
+int *z_rec = static_cast<int *> (malloc (numsplittimes * sizeof (int)));
+ for (int x = 0; x < numsplittimes; x++) {
+        y[x] = T[x].upinf[IM_UPDATE_TIME_NW].tries;
+        z[x] = T[x].upinf[IM_UPDATE_TIME_NW].accp;
+ }
+        try {
+                MPI::COMM_WORLD.Reduce(y, y_rec, numsplittimes, MPI::INT, MPI::SUM, 0);
+        } catch (MPI::Exception e) {
+                std::cout << e.Get_error_string() << e.Get_error_code() << "\n";
+                MPI::COMM_WORLD.Abort(-1);
+        }
+        try {
+                MPI::COMM_WORLD.Reduce(z, z_rec, numsplittimes, MPI::INT, MPI::SUM, 0);
+        } catch (MPI::Exception e) {
+                std::cout << e.Get_error_string() << e.Get_error_code() << "\n";
+                MPI::COMM_WORLD.Abort(-1);
+        }
+        if (currentid == 0) {
+        for (int x = 0; x < numsplittimes; x++) {
+                T[x].upinf[IM_UPDATE_TIME_RY1].tries = y_rec[x];
+                T[x].upinf[IM_UPDATE_TIME_RY1].accp = z_rec[x];
+        }
+        }
+
+ XFREE(y);
+ XFREE(y_rec);
+ XFREE(z);
+ XFREE(z_rec);
+}
+#endif
+#endif
   for (i = 0; i < numsplittimes; i++)
     reclist[i] = (T + i);
 
@@ -3477,27 +3555,270 @@ void callprintacceptancerates (FILE * outto)
   }
   else
   {
-    printacceptancerates (outto, numsplittimes, reclist,
+    if (currentid == 0) 
+	    printacceptancerates (outto, numsplittimes, reclist,
                           "Update Rates -- Population Splitting Times");
   }
+#ifdef DO_RY1UPDATE
+#ifdef MPI_ENABLED
+        if (currentid == 0 && numprocesses > 1) {
+                for (int j = 0; j < numsplittimes; j++) {
+                        T[j].upinf[IM_UPDATE_TIME_RY1].tries = reclist_saved[j]->upinf[IM_UPDATE_TIME_RY1].tries;
+                        T[j].upinf[IM_UPDATE_TIME_RY1].accp = reclist_saved[j]->upinf[IM_UPDATE_TIME_RY1].accp;
+                }
+        }
+#endif
+#endif
+
+
+#ifdef DO_NWUPDATE
+#ifdef MPI_ENABLED
+        if (currentid == 0 && numprocesses > 1) {
+                for (int j  = 0; j < numsplittimes; j++) {
+                        T[j].upinf[IM_UPDATE_TIME_NW].tries = reclist_saved[j]->upinf[IM_UPDATE_TIME_NW].tries;
+                        T[j].upinf[IM_UPDATE_TIME_NW].accp = reclist_saved[j]->upinf[IM_UPDATE_TIME_NW].accp;
+                }
+        }
+#endif
+#endif
+
+
 // genealogy updates
   for (li = 0; li < nloci; li++)
+    reclist_saved[li] = L[li].g_rec;
+
+#ifdef MPI_ENABLED
+
+if (numprocesses > 1) {
+
+int *y = static_cast<int *> (malloc (nloci * sizeof (int)));
+int *y_rec = static_cast<int *> (malloc (nloci * sizeof (int)));
+int *z = static_cast<int *> (malloc (nloci * sizeof (int)));
+int *z_rec = static_cast<int *> (malloc (nloci * sizeof (int)));
+ for (int x = 0; x < nloci; x++) {
+        y[x] = L[x].g_rec->upinf[IM_UPDATE_GENEALOGY_ANY].tries;
+        z[x] = L[x].g_rec->upinf[IM_UPDATE_GENEALOGY_ANY].accp;
+ }
+        try {
+                MPI::COMM_WORLD.Reduce(y, y_rec, nloci, MPI::INT, MPI::SUM, 0);
+        } catch (MPI::Exception e) {
+                std::cout << e.Get_error_string() << e.Get_error_code() << "\n";
+                MPI::COMM_WORLD.Abort(-1);
+        }
+        try {
+                MPI::COMM_WORLD.Reduce(z, z_rec, nloci, MPI::INT, MPI::SUM, 0);
+        } catch (MPI::Exception e) {
+                std::cout << e.Get_error_string() << e.Get_error_code() << "\n";
+                MPI::COMM_WORLD.Abort(-1);
+        }
+        if (currentid == 0) {
+        for (int x = 0; x < nloci; x++) {
+                L[x].g_rec->upinf[IM_UPDATE_GENEALOGY_ANY].tries = y_rec[x];
+                L[x].g_rec->upinf[IM_UPDATE_GENEALOGY_ANY].accp = z_rec[x];
+        }
+        }
+
+for (int x = 0; x < nloci; x++) {
+        y[x] = L[x].g_rec->upinf[IM_UPDATE_GENEALOGY_TOPOLOGY].tries;
+        z[x] = L[x].g_rec->upinf[IM_UPDATE_GENEALOGY_TOPOLOGY].accp;
+ }
+        try {
+                MPI::COMM_WORLD.Reduce(y, y_rec, nloci, MPI::INT, MPI::SUM, 0);
+        } catch (MPI::Exception e) {
+                std::cout << e.Get_error_string() << e.Get_error_code() << "\n";
+                MPI::COMM_WORLD.Abort(-1);
+        }
+        try {
+                MPI::COMM_WORLD.Reduce(z, z_rec, nloci, MPI::INT, MPI::SUM, 0);
+        } catch (MPI::Exception e) {
+                std::cout << e.Get_error_string() << e.Get_error_code() << "\n";
+                MPI::COMM_WORLD.Abort(-1);
+        }
+        if (currentid == 0) {
+        for (int x = 0; x < nloci; x++) {
+                L[x].g_rec->upinf[IM_UPDATE_GENEALOGY_TOPOLOGY].tries = y_rec[x];
+                L[x].g_rec->upinf[IM_UPDATE_GENEALOGY_TOPOLOGY].accp = z_rec[x];
+        }
+        }
+for (int x = 0; x < nloci; x++) {
+        y[x] = L[x].g_rec->upinf[IM_UPDATE_GENEALOGY_TMRCA].tries;
+        z[x] = L[x].g_rec->upinf[IM_UPDATE_GENEALOGY_TMRCA].accp;
+ }
+        try {
+                MPI::COMM_WORLD.Reduce(y, y_rec, nloci, MPI::INT, MPI::SUM, 0);
+        } catch (MPI::Exception e) {
+                std::cout << e.Get_error_string() << e.Get_error_code() << "\n";
+                MPI::COMM_WORLD.Abort(-1);
+        }
+        try {
+                MPI::COMM_WORLD.Reduce(z, z_rec, nloci, MPI::INT, MPI::SUM, 0);
+        } catch (MPI::Exception e) {
+                std::cout << e.Get_error_string() << e.Get_error_code() << "\n";
+                MPI::COMM_WORLD.Abort(-1);
+        }
+        if (currentid == 0) {
+        for (int x = 0; x < nloci; x++) {
+                L[x].g_rec->upinf[IM_UPDATE_GENEALOGY_TMRCA].tries = y_rec[x];
+                L[x].g_rec->upinf[IM_UPDATE_GENEALOGY_TMRCA].accp = z_rec[x];
+        }
+        }
+
+  XFREE(y);
+  XFREE(y_rec);
+  XFREE(z);
+  XFREE(z_rec);
+}
+
+#endif
+
+
+for (li = 0; li < nloci; li++)
     reclist[li] = L[li].g_rec;
-  printacceptancerates (outto, nloci, reclist, "Update Rates -- Genealogies");
+
+  if (currentid == 0) 
+	  printacceptancerates (outto, nloci, reclist, "Update Rates -- Genealogies");
+
+#ifdef MPI_ENABLED
+if (numprocesses > 1 && currentid == 0) {
+        for (li = 0; li < nloci; li++) {
+                L[li].g_rec->upinf[IM_UPDATE_GENEALOGY_ANY].tries = reclist_saved[li]->upinf[IM_UPDATE_GENEALOGY_ANY].tries;
+                L[li].g_rec->upinf[IM_UPDATE_GENEALOGY_TOPOLOGY].tries = reclist_saved[li]->upinf[IM_UPDATE_GENEALOGY_TOPOLOGY].tries;
+                L[li].g_rec->upinf[IM_UPDATE_GENEALOGY_TMRCA].tries = reclist_saved[li]->upinf[IM_UPDATE_GENEALOGY_TMRCA].tries;
+                L[li].g_rec->upinf[IM_UPDATE_GENEALOGY_ANY].accp = reclist_saved[li]->upinf[IM_UPDATE_GENEALOGY_ANY].accp;
+                L[li].g_rec->upinf[IM_UPDATE_GENEALOGY_TOPOLOGY].accp = reclist_saved[li]->upinf[IM_UPDATE_GENEALOGY_TOPOLOGY].accp;
+                L[li].g_rec->upinf[IM_UPDATE_GENEALOGY_TMRCA].accp = reclist_saved[li]->upinf[IM_UPDATE_GENEALOGY_TMRCA].accp;
+        }
+}
+#endif
+
 // mutation rate scalars
   if (nurates > 1
       && (runoptions[PRINTMUTATIONUPDATESTOSCREEN] || outto != stdout))
   {
+#ifdef MPI_ENABLED
+   if (numprocesses > 1 && currentid == 0) {
     for (i = 0, li = 0; li < nloci; li++)
+      for (j = 0; j < L[li].nlinked; j++)
+      {
+        reclist_saved[i] = &L[li].u_rec[j];
+        i++;
+      }
+   }
+#endif
+#ifdef MPI_ENABLED
+if (numprocesses > 1) {
+ for (li = 0;  li < nloci; li++) {
+        int *y = static_cast<int *> (malloc (L[li].nlinked * sizeof (int)));
+        int *y_rec = static_cast<int *> (malloc (L[li].nlinked * sizeof (int)));
+        int *z = static_cast<int *> (malloc (L[li].nlinked * sizeof (int)));
+        int *z_rec = static_cast<int *> (malloc (L[li].nlinked * sizeof (int)));
+
+        for (j = 0; j < L[li].nlinked; j++) {
+                y[j] = L[li].u_rec[j].upinf->tries;
+                z[j] = L[li].u_rec[j].upinf->accp;
+        }
+        try {
+                MPI::COMM_WORLD.Reduce(y, y_rec, L[li].nlinked, MPI::INT, MPI::SUM, 0);
+        } catch (MPI::Exception e) {
+                std::cout << e.Get_error_string() << e.Get_error_code() << "\n";
+                MPI::COMM_WORLD.Abort(-1);
+        }
+        try {
+                MPI::COMM_WORLD.Reduce(z, z_rec, L[li].nlinked, MPI::INT, MPI::SUM, 0);
+        } catch (MPI::Exception e) {
+                std::cout << e.Get_error_string() << e.Get_error_code() << "\n";
+                MPI::COMM_WORLD.Abort(-1);
+        }
+        if (currentid == 0) {
+                for (j = 0; j < L[li].nlinked; j++) {
+                        L[li].u_rec[j].upinf->tries = y_rec[j];
+                        L[li].u_rec[j].upinf->accp = z_rec[j];
+                }
+        }
+        XFREE(y);
+        XFREE(y_rec);
+        XFREE(z);
+        XFREE(z_rec);
+
+        }
+}
+#endif
+for (i = 0, li = 0; li < nloci; li++)
       for (j = 0; j < L[li].nlinked; j++)
       {
         reclist[i] = &L[li].u_rec[j];
         i++;
       }
 // kappa values for HKY model
-    printacceptancerates (outto, i, reclist,
+    if (currentid == 0)
+	    printacceptancerates (outto, i, reclist,
                           "Update Rates -- Mutation Rate Scalars");
+#ifdef MPI_ENABLED
+if (numprocesses > 1 && currentid == 0) {
+        for (li = 0; li < nloci; li++) {
+                for (j = 0; j < L[li].nlinked; j++) {
+                        L[li].u_rec[j].upinf->tries = reclist_saved[li]->upinf[j].tries;
+                        L[li].u_rec[j].upinf->accp = reclist_saved[li]->upinf[j].accp;
+                }
+        }
+}
+#endif
+
+
+
     for (i = 0, li = 0; li < nloci; li++)
+      for (j = 0; j < L[li].nlinked; j++)
+      {
+        if (L[li].umodel[j] == HKY)
+        {
+          reclist_saved[i] = L[li].kappa_rec;
+          i++;
+        }
+      }
+
+#ifdef MPI_ENABLED
+if (numprocesses > 1) {
+ for (li = 0;  li < nloci; li++) {
+        int *y = static_cast<int *> (malloc (L[li].nlinked * sizeof (int)));
+        int *y_rec = static_cast<int *> (malloc (L[li].nlinked * sizeof (int)));
+        int *z = static_cast<int *> (malloc (L[li].nlinked * sizeof (int)));
+        int *z_rec = static_cast<int *> (malloc (L[li].nlinked * sizeof (int)));
+        for (j = 0; j < L[li].nlinked; j++) {
+                if (L[li].umodel[j] == HKY) {
+                        y[j] = L[li].kappa_rec[j].upinf->tries;
+                        z[j] = L[li].kappa_rec[j].upinf->accp;
+                }
+        }
+        try {
+                MPI::COMM_WORLD.Reduce(y, y_rec, L[li].nlinked, MPI::INT, MPI::SUM, 0);
+        } catch (MPI::Exception e) {
+                std::cout << e.Get_error_string() << e.Get_error_code() << "\n";
+                MPI::COMM_WORLD.Abort(-1);
+        }
+        try {
+                MPI::COMM_WORLD.Reduce(z, z_rec, L[li].nlinked, MPI::INT, MPI::SUM, 0);
+        } catch (MPI::Exception e) {
+                std::cout << e.Get_error_string() << e.Get_error_code() << "\n";
+                MPI::COMM_WORLD.Abort(-1);
+        }
+        if (currentid == 0) {
+                for (j = 0; j < L[li].nlinked; j++) {
+                        if (L[li].umodel[j] == HKY) {
+                                L[li].kappa_rec[j].upinf->tries = y_rec[j];
+                                L[li].kappa_rec[j].upinf->accp = z_rec[j];
+                        }
+                }
+        }
+        XFREE(y);
+        XFREE(y_rec);
+        XFREE(z);
+        XFREE(z_rec);
+
+        }
+}
+#endif
+
+for (i = 0, li = 0; li < nloci; li++)
       for (j = 0; j < L[li].nlinked; j++)
       {
         if (L[li].umodel[j] == HKY)
@@ -3506,9 +3827,27 @@ void callprintacceptancerates (FILE * outto)
           i++;
         }
       }
-    if (i > 0)
+
+    if (i > 0 && currentid == 0)
       printacceptancerates (outto, i, reclist,
                             "Update Rates -- HKY Model Kappa parameter");
+
+#ifdef MPI_ENABLED
+if (numprocesses > 1 && currentid == 0) {
+        for (li = 0; li < nloci; li++) {
+                for (j = 0; j < L[li].nlinked; j++) {
+                        if (L[li].umodel[j] == HKY) {
+                                L[li].kappa_rec[j].upinf->tries = reclist_saved[li]->upinf[j].tries;
+                                L[li].kappa_rec[j].upinf->accp = reclist_saved[li]->upinf[j].accp;
+                        }
+                }
+        }
+}
+#endif
+
+
+
+
 // STR ancestral allele states 
 // A_rec not used as of sometime in 2010, A gets enough updates when updating genealogy
 //8/26/2011  turn this printing section off, as it only ever prints zeros when A updating is not used 
@@ -3719,9 +4058,9 @@ if (currentid == 0) {
  }
   // Bayes factor stuff of Sang Chul's fprintf (outfile, "Average loglikelihood: %lf\n", gloglikelihood);
   if (runoptions[LOADRUN] == 0)
-  { if (currentid == 0) {
-    callprintacceptancerates (outfile);
-    }
+  { //if (currentid == 0) {
+    callprintacceptancerates (outfile, currentid);
+    //}
     if (numprocesses * numchains > 1 && runoptions[LOADRUN] != 1) { 
 	      printchaininfo (outfile, heatmode, hval1, hval2, currentid);
 	}
@@ -3850,11 +4189,11 @@ void intervaloutput (FILE * outto, int currentid)
   if (((step / (int) printint) * (int) printint == step && step > 0)
       || outto != stdout)
   {
-   if (currentid == 0) {
+   if (currentid == 0)
     printsteps (outto, like);
 
-    callprintacceptancerates (outto);
-
+    callprintacceptancerates (outto, currentid);
+   if (currentid == 0) {
     printcurrentvals (outto);
     callprintautoctable (outto /*, step*/);
     }
