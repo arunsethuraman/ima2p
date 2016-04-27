@@ -1274,7 +1274,7 @@ int swapchains (int swaptries, int swapbetasonly, int currentid, int heatmode);
 void swapbetas (int ci, int cj);
 /* AS - adding a function to swap heats between processes */
 //#ifdef MPI_ENABLED
-int swapchains_bwprocesses (/*int *swapper, int *swappee, */int current_id, int step, int swaptries, int swapbetasonly,int chainduration, int burnduration,/* std::ofstream &f1, int swapA, int swapB*/, int heatmode);
+int swapchains_bwprocesses (/*int *swapper, int *swappee, */int current_id, int step, int swaptries, int swapbetasonly,int chainduration, int burnduration,/* std::ofstream &f1, int swapA, int swapB*/ int heatmode);
 //#endif
 void printchaininfo (FILE * outto, int heatmode, 
                      double hval1, double hval2, int currentid);
