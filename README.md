@@ -6,6 +6,11 @@ Citation:
 Sethuraman, A, J Hey. 2015. IMa2p - Parallel MCMC and inference of ancient demography under the Isolation with Migration (IM) model. Molecular Ecology Resources
 DOI: 10.1111/1755-0998.12437
 
+Important - Bug fix - 8/4/2016
+
+Fixed a bug which was causing the program to hang in the event that the user doesn't specify the heating parameters despite trying to run it in parallel.
+Thanks to Jared Knoblauch for catching this!
+
 Important - Bug fix - 10/19/2015
 
 Fixed a bug in reading MCF files back into memory for re-starting M mode. Previously, the code was wrongly reading the MCF file prefixed as:
