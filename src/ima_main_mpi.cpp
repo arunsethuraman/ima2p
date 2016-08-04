@@ -1003,6 +1003,16 @@ no flag is followed by nothing
     }
   }
 
+//AS: Jared Knoblauch caught a bug here - if the numprocessors > 1, and heating parameters aren't specified
+//the program hangs. Fixing this Thu Aug  4 13:40:59 EDT 2016
+	#ifdef MPI_ENABLED
+	if (numprocesses > 1) {
+		if (Hnp == 0)
+			IM_err (IMERR_COMMANDLINEHEATINGTERMS, "no -hn flag specified despite attempting to run on %d processors", numprocesses);
+		if (Hnp == 1 && Hfp == 0)
+			IM_err (IMERR_COMMANDLINEHEATINGTERMS, "no -heating mode specified");
+	}
+	#endif
   /* Check if command line options are compatible with single population. */
   if (infilename==0)
     IM_err (IMERR_READFILEOPENFAIL,  "pointer to input file not set,  check -i on command line");
