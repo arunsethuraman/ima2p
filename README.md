@@ -36,7 +36,7 @@ Thereon, you should be able to call IMa2p's L mode as before. Note that this has
 2) I have now added the functionality to print swap rates between adjacent temperatures - note that in parallelized MC3, while chains remain stationary across processors, their temperatures move around throughout the run.
 Hence swapping rates between adjancent temperatures of chains should give a better idea of mixing than swap rates between adjacent chains. 
 
-Please report any bugs/crashes to arun@temple.edu
+Please report any bugs/crashes to asethuraman@csusm.edu
 
 Compiling and Running IMa2p
 
@@ -102,6 +102,6 @@ c)	*.mcf.<processor number> files – if you have set the MCMC states to be save
 d)	*.burntrend.out.<processor number> file – burn-in trend files are created at the end of burn-in runs. These contain update rates for genealogies, which are unique to each processor (since there are coupled chains running on each processor). However, the burn-trend is collated onto the head node, and can be seen in the *.burntrend.out.0 file.
 e) If you wish to save lots of genealogies from multiple separate runs (M mode), and then run L mode computations on all these genealogies, you can do so by using the -r0 option, and specifying suffixes for all the saved ".ti" files using the -v option. Note that a separate L mode run will run in serial.
 
-5.	Please report any issues with compilation/running IMa2p to Arun Sethuraman (arun@temple.edu).
+5.	Please report any issues with compilation/running IMa2p to Arun Sethuraman (asethuraman@csusm.edu).
 
 
