@@ -6,6 +6,20 @@ Citation:
 Sethuraman, A, J Hey. 2015. IMa2p - Parallel MCMC and inference of ancient demography under the Isolation with Migration (IM) model. Molecular Ecology Resources
 DOI: 10.1111/1755-0998.12437
 
+Very Important - Update regarding OpenMPI and C++ bindings - 7/12/2017
+It was recently brought to my attention that the newer versions of OpenMPI are not implicitly bundled with C++ bindings. This means that if you don't explicitly compile OpenMPI with C++ bindings, and try compiling IMa2p, you will end up with errors.
+So to avoid this problem, when you are compiling OpenMPI, use the flag --enable-mpi-cxx as:
+
+./configure --enable-mpi-cxx
+
+Then use:
+
+make install
+
+This should compile/make OpenMPI to support C++ bindings correctly, allowing you to install IMa2p as usual.
+
+Thanks to Yang Thomas for pointing this error out to me!
+
 Important - Bug fix - 8/4/2016
 
 Fixed a bug which was causing the program to hang in the event that the user doesn't specify the heating parameters despite trying to run it in parallel.
